@@ -1,10 +1,11 @@
-import 'GameLoopPage.dart';
 import 'dart:async';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+
+enum TtsState { playing, stopped, paused, continued }
 
 void main() {
   runApp(MyApp());
@@ -39,7 +40,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final SpeechToText speech = SpeechToText();
   bool showMic = false;
-  double level=0;
 
   FlutterTts flutterTts;
   dynamic languages;
@@ -47,6 +47,12 @@ class _MyHomePageState extends State<MyHomePage> {
   double volume = 1;
   double pitch = 1.2;
   double rate = 1.2;
+
+  TtsState ttsState = TtsState.stopped;
+  get isPlaying => ttsState == TtsState.playing;
+  get isStopped => ttsState == TtsState.stopped;
+  get isPaused => ttsState == TtsState.paused;
+  get isContinued => ttsState == TtsState.continued;
 
   @override
   initState() {
@@ -56,9 +62,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void initTtsAndSttAndFirstSpeech() async {
     await initSTT();
-    await initTts();
+    //await initTts();
     //firstSpeech();
-    startListening();
   }
 
   initSTT() async {
@@ -88,7 +93,6 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       showMic = false;
     });
-    startListening();
   }
 
   void statusListener(String status) {
@@ -104,19 +108,13 @@ class _MyHomePageState extends State<MyHomePage> {
       // listenFor: Duration(seconds: 60),
       // pauseFor: Duration(seconds: 3),
       localeId: 'ru_RU', // en_US uk_UA ru_RU
-      onSoundLevelChange: soundLevelListener,
+      // onSoundLevelChange: soundLevelListener,
       cancelOnError: true,
       partialResults: true,
       // onDevice: true,
       // listenMode: ListenMode.confirmation,
       // sampleRate: 44100,
     );
-  }
-
-  void soundLevelListener(double level) {
-    setState(() {
-      this.level = level;
-    });
   }
 
   void resultListener(SpeechRecognitionResult result) async {
@@ -217,18 +215,18 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               buildSmileIcon(),
               Text(
-                '\nПривет! \nЯ - интерактивный помощник для игры Твистер.',
+                '\nПривет! \nЯ - интерактивный помощник для игры в Твистер.',
                 textScaleFactor: 1.3, textAlign: TextAlign.center,
               ),
               SizedBox(height: 20),
               Text(
-                  'Я понимаю такие госовые команды: \n   "ОК" - следующий игрок,\n   "А ну повтори!" - повторить задание.',
-                  textScaleFactor: 1.3, textAlign: TextAlign.center
+                'Я понимаю такие госовые команды: \n   "ОК" - следующий игрок,\n   "А ну повтори!" - повторить задание.',
+                textScaleFactor: 1.3, textAlign: TextAlign.center
               ),
               SizedBox(height: 20),
               Text(
-                  'Для начала игры укажи количество игроков и нажми или скажи "Старт"!',
-                  textScaleFactor: 1.3, textAlign: TextAlign.center
+                'Для начала игры укажи количество игроков и нажми или скажи "Старт"!',
+                textScaleFactor: 1.3, textAlign: TextAlign.center
               ),
               SizedBox(height: 20),
               Center(
@@ -276,31 +274,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   goToStartGamePage();
                 },
                 child: Container(
-                    height: 40,
-                    child: Center(child: Text('Старт!', textScaleFactor: 1.5, style: TextStyle(color: Colors.white)))),
-              ),
-              SizedBox(height: 10,),
-              showMic?
-              Center(
-                child: Container(
-                  width: 40, height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                          blurRadius: .26,
-                          spreadRadius: level * 1.5,
-                          color: Colors.black.withOpacity(.1))
-                    ],
-                    color: Colors.white,
-                    borderRadius:
-                    BorderRadius.all(Radius.circular(50)),
-                  ),
-                  child: IconButton(icon: Icon(Icons.mic, color: Colors.blueAccent)),
-                ),
-              )
-                //IconButton(icon: Icon(Icons.mic, color: Colors.blueAccent,), onPressed: (){})
-                :SizedBox(),
+                  height: 40,
+                  child: Center(child: Text('Старт!', textScaleFactor: 1.5, style: TextStyle(color: Colors.white)))),
+              )            
             ],
           ),
         ),
@@ -310,7 +286,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget buildSmileIcon() {
     return speakingMode? Image.asset('images/speakingSmile.gif', width: 100, height: 100,)
-        : Image.asset('images/notSpeakingSmile.jpg', width: 100, height: 100,);
+                        : Image.asset('images/notSpeakingSmile.jpg', width: 100, height: 100,);
   }
 
   showAlertPage(String msg) {
@@ -329,8 +305,5 @@ class _MyHomePageState extends State<MyHomePage> {
       speech.stop();
     } catch (e) {}
     print('start game for $numPlayers');
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => GameLoopPage(numPlayers))
-    );
   }
 }
