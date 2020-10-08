@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -17,7 +19,18 @@ class _GameLoopPageState extends State<GameLoopPage> {
   final numPlayers;
   _GameLoopPageState(this.numPlayers);
 
+  double picSize = 200.0;
+  List <Color> colorsList = [Colors.green, Colors.blue, Colors.red, Colors.yellow];
+  List <String> imgList = ['leftFoot.gif', 'rightFoot.gif', 'leftHand.gif', 'rightHand.gif'];
+  List <String> bodyParts = ['Левая нога', 'Правая нога', 'Левая рука', 'Правая рука'];
+  List <String> colorNames = ['Зелёный', 'Синий', 'Красный', 'Жёлтый'];
+  int _count = 0;
+  Color _color = Colors.green;
+  static const int refreshPeriodMS = 600;
+  int numLoopsToFindResult = 8, numLoop = 0;
   bool speakingMode = false;
+  int playerNumber = 1;
+  String playerTask = '';
 
   final SpeechToText speech = SpeechToText();
   bool showMic = false;
@@ -32,15 +45,38 @@ class _GameLoopPageState extends State<GameLoopPage> {
 
   @override
   void initState() {
-    initTtsAndSttAndFirstSpeech();
+    //initTtsAndSttAndFirstSpeech();
     super.initState();
+    Future.delayed(const Duration(milliseconds: refreshPeriodMS), randomizerLoop);
+  }
+
+  randomizerLoop(){
+    showMic = false;
+    var rng = new Random();
+    int _newCount, _newColorCount; Color _newColor;
+    do {
+      _newCount = rng.nextInt(4);
+      _newColorCount = rng.nextInt(4);
+      _newColor = colorsList[_newColorCount];
+    } while (_newCount == _count || _newColor == _color);
+    numLoop++;
+    if (numLoop < numLoopsToFindResult) {
+      Future.delayed(const Duration(milliseconds: refreshPeriodMS), randomizerLoop);
+    } else {
+      playerTask = bodyParts[_newCount] + ' на ' + colorNames[_newColorCount];
+      showMic = true;
+    }
+    setState(() {
+      _count = _newCount;
+      _color = _newColor;
+    });
   }
 
   void initTtsAndSttAndFirstSpeech() async {
     await initSTT();
     await initTts();
     //firstSpeech();
-    startListening();
+    //startListening();
   }
 
   initSTT() async {
@@ -70,7 +106,7 @@ class _GameLoopPageState extends State<GameLoopPage> {
     setState(() {
       showMic = false;
     });
-    startListening();
+    //startListening();
   }
 
   void statusListener(String status) {
@@ -178,7 +214,86 @@ class _GameLoopPageState extends State<GameLoopPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Вращаем барабан!', textScaleFactor: 1.4, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+      body: Container(
+        padding: EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Center(child: Text('Задание для игрока', textScaleFactor: 2,)),
+            SizedBox(height: 10,),
+            Center(child: Text('№ $playerNumber', textScaleFactor: 2.5,)),
+            SizedBox(height: 20,),
+            Center(
+              child: Container(
+                height: picSize*1.1,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: refreshPeriodMS),
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    //return ScaleTransition(child: child, scale: animation);
+                    //return FadeTransition(child: child, opacity: animation);
+                    //return RotationTransition(child: child, turns: animation);
+                    final offsetAnimation = Tween<Offset>(begin: Offset(-1.0, 0.0), end: Offset(0.0, 0.0)).animate(animation);
+                    return SlideTransition(child: child, position: offsetAnimation);
+                  },
+                  child: Container(
+                    key: ValueKey<int>(_count),
+                    width: picSize, height: picSize,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _color,
+                    ),
+                    child: Center(
+                        child: Image.asset('images/${imgList[_count]}', width: picSize*0.9, height: picSize*0.9,)
+                    )
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 20,),
+            Center(child: Text(playerTask, textScaleFactor: 2,)),
+            showMic?
+            Center(
+              child: Container(
+                width: 100, height: 100,
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                        blurRadius: .26,
+                        spreadRadius: level * 1.5,
+                        color: Colors.black.withOpacity(.1))
+                  ],
+                  color: Colors.lightGreenAccent,
+                  borderRadius: BorderRadius.all(Radius.circular(50)),
+                ),
+                child: Center(
+                  child: FloatingActionButton(
+                    backgroundColor: Colors.white,
+                    onPressed: (){
+                      playerNumber++;
+                      if (playerNumber > numPlayers) {
+                        playerNumber = 1;
+                      }
+                      setState(() {
+                        showMic = false;
+                        playerTask = '';
+                        numLoop = 0;
+                      });
+                      randomizerLoop();
+                    },
+                      child: Icon(Icons.mic, color: Colors.blueAccent, size: 50,)
+                  ),
+                ),
+              ),
+            )
+            :SizedBox(),
+          ],
+        )
+      ),
+    );
   }
 
   showAlertPage(String msg) {

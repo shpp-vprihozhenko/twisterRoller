@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 import 'GameLoopPage.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -7,7 +9,10 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 void main() {
-  runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+      .then((value) => runApp(MyApp()));
+  //runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -246,6 +251,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         },
                         tooltip: 'уменьшить',
                         child: Icon(Icons.exposure_minus_1),
+                        heroTag: 'decrease',
                       ),
                     ), // This trailing co,
                     Container(
@@ -263,6 +269,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         },
                         tooltip: 'увеличить',
                         child: Icon(Icons.exposure_plus_1),
+                        heroTag: 'increase',
                       ),
                     ),
                   ],
@@ -326,8 +333,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   goToStartGamePage() {
     try {
+      print('speech.stop');
+      speech.errorListener = null;
+      speech.statusListener = null;
       speech.stop();
-    } catch (e) {}
+    } catch (e) {
+      print('err on speech stop $e');
+    }
     print('start game for $numPlayers');
     Navigator.push(context,
         MaterialPageRoute(builder: (context) => GameLoopPage(numPlayers))
