@@ -24,9 +24,9 @@ class _GameLoopPageState extends State<GameLoopPage> {
   List <String> imgList = ['leftFoot.gif', 'rightFoot.gif', 'leftHand.gif', 'rightHand.gif'];
   List <String> bodyParts = ['Левая нога', 'Правая нога', 'Левая рука', 'Правая рука'];
   List <String> colorNames = ['Зелёный', 'Синий', 'Красный', 'Жёлтый'];
-  int _count = 0;
+  int _count = 0, _colorCount = 0, _lastKey = 0;
   Color _color = Colors.green;
-  static const int refreshPeriodMS = 600;
+  static const int refreshPeriodMS = 500;
   int numLoopsToFindResult = 8, numLoop = 0;
   bool speakingMode = false;
   int playerNumber = 1;
@@ -60,15 +60,25 @@ class _GameLoopPageState extends State<GameLoopPage> {
       _newColor = colorsList[_newColorCount];
     } while (_newCount == _count || _newColor == _color);
     numLoop++;
+    _lastKey = _count + (_colorCount+1)*16;
     if (numLoop < numLoopsToFindResult) {
       Future.delayed(const Duration(milliseconds: refreshPeriodMS), randomizerLoop);
     } else {
-      playerTask = bodyParts[_newCount] + ' на ' + colorNames[_newColorCount];
-      showMic = true;
+      Future.delayed(const Duration(milliseconds: refreshPeriodMS), (){
+        startSpeakAndWaitMode(_newCount, _newColorCount);
+      });
     }
     setState(() {
       _count = _newCount;
+      _colorCount = _newColorCount;
       _color = _newColor;
+    });
+  }
+
+  startSpeakAndWaitMode(_newCount, _newColorCount){
+    setState(() {
+      playerTask = bodyParts[_newCount] + ' на ' + colorNames[_newColorCount] + '!';
+      showMic = true;
     });
   }
 
@@ -223,6 +233,7 @@ class _GameLoopPageState extends State<GameLoopPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            SizedBox(height: 10,),
             Center(child: Text('Задание для игрока', textScaleFactor: 2,)),
             SizedBox(height: 10,),
             Center(child: Text('№ $playerNumber', textScaleFactor: 2.5,)),
@@ -236,11 +247,42 @@ class _GameLoopPageState extends State<GameLoopPage> {
                     //return ScaleTransition(child: child, scale: animation);
                     //return FadeTransition(child: child, opacity: animation);
                     //return RotationTransition(child: child, turns: animation);
-                    final offsetAnimation = Tween<Offset>(begin: Offset(-1.0, 0.0), end: Offset(0.0, 0.0)).animate(animation);
-                    return SlideTransition(child: child, position: offsetAnimation);
+
+                    //final offsetAnimation = Tween<Offset>(begin: Offset(-1.0, 0.0), end: Offset(0.0, 0.0)).animate(animation);
+                    //return ClipRect(child: SlideTransition(child: child, position: offsetAnimation));
+
+                    final inAnimation =
+                    Tween<Offset>(begin: Offset(1.0, 0.0), end: Offset(0.0, 0.0))
+                        .animate(animation);
+                    final outAnimation =
+                    Tween<Offset>(begin: Offset(-1.0, 0.0), end: Offset(0.0, 0.0))
+                        .animate(animation);
+
+                    if (child.key == ValueKey(_lastKey)) {
+                      return ClipRect(
+                        child: SlideTransition(
+                          position: inAnimation,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: child,
+                          ),
+                        ),
+                      );
+                    } else {
+                      return ClipRect(
+                        child: SlideTransition(
+                          position: outAnimation,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: child,
+                          ),
+                        ),
+                      );
+                    }
+                    //return ClipRect(child: SlideTransition(child: child, position: offsetAnimation));
                   },
                   child: Container(
-                    key: ValueKey<int>(_count),
+                    key: ValueKey<int>(_count + (_colorCount+1)*16),
                     width: picSize, height: picSize,
                     decoration: BoxDecoration(
                         shape: BoxShape.circle,
@@ -255,6 +297,7 @@ class _GameLoopPageState extends State<GameLoopPage> {
             ),
             SizedBox(height: 20,),
             Center(child: Text(playerTask, textScaleFactor: 2,)),
+            SizedBox(height: 20,),
             showMic?
             Center(
               child: Container(
