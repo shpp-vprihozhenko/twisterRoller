@@ -345,14 +345,28 @@ class _MyHomePageState extends State<MyHomePage> {
     print('start game for $numPlayers');
     Navigator.push(context,
         MaterialPageRoute(builder: (context) => GameLoopPage(numPlayers))
-    ).then((result){
+    ).then((result) async {
       print('cb from push');
-      Future.delayed(const Duration(milliseconds: 200), () async {
-        await initSTT();
-        speech.errorListener = errorListener;
-        speech.statusListener = statusListener;
-        startListening();
-      });
+      speech.errorListener = null;
+      speech.statusListener = null;
+      try {
+        print('speech.stop');
+        await speech.stop();
+      } catch (e) {
+        print('err in cb from push route $e');
+      }
+      await initSTT();
+      speech.errorListener = errorListener;
+      speech.statusListener = statusListener;
+      startListening();
     });
+  }
+
+  @override
+  void dispose() {
+    speech.stop();
+    speech.errorListener = null;
+    speech.statusListener = null;
+    super.dispose();
   }
 }

@@ -55,6 +55,8 @@ class _GameLoopPageState extends State<GameLoopPage> {
   double pitch = 1.2;
   double rate = 1.2;
 
+  var rng = new Random();
+
   @override
   void initState() {
     initTtsAndStt();
@@ -64,11 +66,11 @@ class _GameLoopPageState extends State<GameLoopPage> {
 
   randomizerLoop(){
     showMic = false;
-    var rng = new Random();
-    int _newCount;
-    do {
-      _newCount = rng.nextInt(16);
-    } while (_newCount == _count);
+    int _newCount = rng.nextInt(16);
+    print('got new count $_newCount');
+//    do {
+//      _newCount = rng.nextInt(16);
+//    } while (_newCount == _count);
     numLoop++;
     _lastKey = _count; // + (_colorCount+1)*16
     if (numLoop < numLoopsToFindResult) {
@@ -384,12 +386,4 @@ class _GameLoopPageState extends State<GameLoopPage> {
     );
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-    speech.errorListener = null;
-    speech.statusListener = null;
-    print('speech.stop from dispose GamePage');
-    speech.stop();
-  }
 }
