@@ -68,9 +68,6 @@ class _GameLoopPageState extends State<GameLoopPage> {
     showMic = false;
     int _newCount = rng.nextInt(16);
     print('got new count $_newCount');
-//    do {
-//      _newCount = rng.nextInt(16);
-//    } while (_newCount == _count);
     numLoop++;
     _lastKey = _count; // + (_colorCount+1)*16
     if (numLoop < numLoopsToFindResult) {
