@@ -20,14 +20,26 @@ class _GameLoopPageState extends State<GameLoopPage> {
   _GameLoopPageState(this.numPlayers);
 
   double picSize = 200.0;
-  List <Color> colorsList = [Colors.green, Colors.blue, Colors.red, Colors.yellow];
-  List <String> imgList = ['leftFoot.gif', 'rightFoot.gif', 'leftHand.gif', 'rightHand.gif'];
-  List <String> bodyParts = ['Левая нога', 'Правая нога', 'Левая рука', 'Правая рука'];
-  List <String> colorNames = ['Зелёный', 'Синий', 'Красный', 'Жёлтый'];
-  int _count = 0, _colorCount = 0, _lastKey = 0;
-  Color _color = Colors.green;
-  static const int refreshPeriodMS = 500;
-  int numLoopsToFindResult = 8, numLoop = 0;
+//  List <Color> colorsList = [Colors.green, Colors.blue, Colors.red, Colors.yellow];
+//  List <String> imgList = ['leftFoot.gif', 'rightFoot.gif', 'leftHand.gif', 'rightHand.gif'];
+//  List <String> bodyParts = ['Левая нога', 'Правая нога', 'Левая рука', 'Правая рука'];
+//  List <String> colorNames = ['Зелёный', 'Синий', 'Красный', 'Жёлтый'];
+  List <String> fullImgList = [
+    'greenLeftFoot.gif', 'greenRightFoot.gif', 'greenLeftHand.gif', 'greenRightHand.gif',
+    'blueLeftFoot.gif', 'blueRightFoot.gif', 'blueLeftHand.gif', 'blueRightHand.gif',
+    'redLeftFoot.gif', 'redRightFoot.gif', 'redLeftHand.gif', 'redRightHand.gif',
+    'yellowLeftFoot.gif', 'yellowRightFoot.gif', 'yellowLeftHand.gif', 'yellowRightHand.gif',
+  ];
+  List <String> fullImgListNames = [
+    'Левая нога на Зелёный', 'Правая нога на Зелёный', 'Левая рука на Зелёный', 'Правая рука на Зелёный',
+    'Левая нога на Синий', 'Правая нога на Синий', 'Левая рука на Синий', 'Правая рука на Синий',
+    'Левая нога на Красный', 'Правая нога на Красный', 'Левая рука на Красный', 'Правая рука на Красный',
+    'Левая нога на Жёлтый', 'Правая нога на Жёлтый', 'Левая рука на Жёлтый', 'Правая рука на Жёлтый',
+  ];
+  int _count = 0, _lastKey = 0; //_colorCount = 0,
+  //Color _color = Colors.green;
+  static const int refreshPeriodMS = 300;
+  int numLoopsToFindResult = 15, numLoop = 0;
   bool speakingMode = false;
   int playerNumber = 1;
   String playerTask = '';
@@ -45,7 +57,7 @@ class _GameLoopPageState extends State<GameLoopPage> {
 
   @override
   void initState() {
-    //initTtsAndSttAndFirstSpeech();
+    initTtsAndStt();
     super.initState();
     Future.delayed(const Duration(milliseconds: refreshPeriodMS), randomizerLoop);
   }
@@ -53,40 +65,39 @@ class _GameLoopPageState extends State<GameLoopPage> {
   randomizerLoop(){
     showMic = false;
     var rng = new Random();
-    int _newCount, _newColorCount; Color _newColor;
+    int _newCount;
     do {
-      _newCount = rng.nextInt(4);
-      _newColorCount = rng.nextInt(4);
-      _newColor = colorsList[_newColorCount];
-    } while (_newCount == _count || _newColor == _color);
+      _newCount = rng.nextInt(16);
+    } while (_newCount == _count);
     numLoop++;
-    _lastKey = _count + (_colorCount+1)*16;
+    _lastKey = _count; // + (_colorCount+1)*16
     if (numLoop < numLoopsToFindResult) {
       Future.delayed(const Duration(milliseconds: refreshPeriodMS), randomizerLoop);
     } else {
       Future.delayed(const Duration(milliseconds: refreshPeriodMS), (){
-        startSpeakAndWaitMode(_newCount, _newColorCount);
+        startSpeakAndWaitMode(_newCount);
       });
     }
     setState(() {
       _count = _newCount;
-      _colorCount = _newColorCount;
-      _color = _newColor;
     });
   }
 
-  startSpeakAndWaitMode(_newCount, _newColorCount){
+  startSpeakAndWaitMode(_newCount) async {
+    numLoop = 0;
     setState(() {
-      playerTask = bodyParts[_newCount] + ' на ' + colorNames[_newColorCount] + '!';
+      //playerTask = bodyParts[_newCount] + ' на ' + colorNames[_newColorCount] + '!';
+      playerTask = fullImgListNames[_newCount] + '!';
       showMic = true;
     });
+    await _speakSync('Игрок № $playerNumber');
+    await _speakSync(playerTask);
+    startListening();
   }
 
-  void initTtsAndSttAndFirstSpeech() async {
+  void initTtsAndStt() async {
     await initSTT();
     await initTts();
-    //firstSpeech();
-    //startListening();
   }
 
   initSTT() async {
@@ -112,15 +123,15 @@ class _GameLoopPageState extends State<GameLoopPage> {
   }
 
   void errorListener(SpeechRecognitionError error) {
-    print("Received Eng error status: $error, listening: ${speech.isListening}");
+    print("Received GLP error status: $error, listening: ${speech.isListening}");
     setState(() {
       showMic = false;
     });
-    //startListening();
+    startListening();
   }
 
   void statusListener(String status) {
-    print("Received listener status: $status, listening: ${speech.isListening}");
+    print("Received GLP listener status: $status, listening: ${speech.isListening}");
   }
 
   void startListening() {
@@ -154,14 +165,25 @@ class _GameLoopPageState extends State<GameLoopPage> {
       setState(() {
         showMic = false;
       });
-      String recognizedWords = result.recognizedWords.toString().toUpperCase();
-//      if (recognizedWords.indexOf('СТАРТ') == -1) {
-//        print('no start, repeat stt loop');
-//        startListening();
-//      } else {
-//        goToStartGamePage();
-//      }
+      List <String> recognizedWords = result.recognizedWords.toString().toUpperCase().split(' ');
+      if (recognizedWords.indexOf('OK') > -1 || recognizedWords.indexOf('О\'КЕЙ') > -1 || recognizedWords.indexOf('ОК') > -1) {
+        print('start new random loop');
+        startNextPlayerLoop();
+      } else if (recognizedWords.indexOf('ПОВТОРИ') > -1) {
+        print('repeat');
+        repeatAndStartListeningAgain();
+      } else {
+        print('no keywords. StartListening again.');
+        print(recognizedWords);
+        startListening();
+      }
     }
+  }
+
+  repeatAndStartListeningAgain() async {
+    await _speakSync('Игрок № $playerNumber');
+    await _speakSync(playerTask);
+    startListening();
   }
 
   Future _getLanguages() async {
@@ -247,7 +269,6 @@ class _GameLoopPageState extends State<GameLoopPage> {
                     //return ScaleTransition(child: child, scale: animation);
                     //return FadeTransition(child: child, opacity: animation);
                     //return RotationTransition(child: child, turns: animation);
-
                     //final offsetAnimation = Tween<Offset>(begin: Offset(-1.0, 0.0), end: Offset(0.0, 0.0)).animate(animation);
                     //return ClipRect(child: SlideTransition(child: child, position: offsetAnimation));
 
@@ -282,15 +303,18 @@ class _GameLoopPageState extends State<GameLoopPage> {
                     //return ClipRect(child: SlideTransition(child: child, position: offsetAnimation));
                   },
                   child: Container(
-                    key: ValueKey<int>(_count + (_colorCount+1)*16),
+                    key: ValueKey<int>(_count), // + (_colorCount+1)*16
                     width: picSize, height: picSize,
+/*
                     decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _color,
                     ),
-                    child: Center(
-                        child: Image.asset('images/${imgList[_count]}', width: picSize*0.9, height: picSize*0.9,)
+                  child: Center(
+                  child: Image.asset('images/${imgList[_count]}', width: picSize*0.9, height: picSize*0.9,)
                     )
+ */
+                      child: Image.asset('images/${fullImgList[_count]}')
                   ),
                 ),
               ),
@@ -316,27 +340,37 @@ class _GameLoopPageState extends State<GameLoopPage> {
                   child: FloatingActionButton(
                     backgroundColor: Colors.white,
                     onPressed: (){
-                      playerNumber++;
-                      if (playerNumber > numPlayers) {
-                        playerNumber = 1;
-                      }
-                      setState(() {
-                        showMic = false;
-                        playerTask = '';
-                        numLoop = 0;
-                      });
-                      randomizerLoop();
+                      startNextPlayerLoop();
                     },
-                      child: Icon(Icons.mic, color: Colors.blueAccent, size: 50,)
+                    child: Icon(Icons.mic, color: Colors.blueAccent, size: 50,)
                   ),
                 ),
               ),
             )
             :SizedBox(),
+            SizedBox(height: 10,),
+            showMic? FlatButton(
+              color: Colors.lightBlueAccent,
+              child: Text('Следующий игрок', textScaleFactor: 1.5,),
+              onPressed: startNextPlayerLoop,
+            )
+            : SizedBox(),
           ],
         )
       ),
     );
+  }
+
+  startNextPlayerLoop(){
+    playerNumber++;
+    if (playerNumber > numPlayers) {
+      playerNumber = 1;
+    }
+    setState(() {
+      showMic = false;
+      playerTask = '';
+    });
+    randomizerLoop();
   }
 
   showAlertPage(String msg) {
@@ -350,4 +384,12 @@ class _GameLoopPageState extends State<GameLoopPage> {
     );
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+    speech.errorListener = null;
+    speech.statusListener = null;
+    print('speech.stop from dispose GamePage');
+    speech.stop();
+  }
 }

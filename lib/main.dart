@@ -67,6 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   initSTT() async {
+    print('init STT from main');
     bool hasSpeech = await speech.initialize(
         onError: errorListener, onStatus: statusListener);
 
@@ -101,6 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void startListening() {
+    print('start listening');
     setState(() {
       showMic = true;
     });
@@ -333,7 +335,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   goToStartGamePage() {
     try {
-      print('speech.stop');
+      print('speech.stop from goToStartGamePage');
       speech.errorListener = null;
       speech.statusListener = null;
       speech.stop();
@@ -343,6 +345,14 @@ class _MyHomePageState extends State<MyHomePage> {
     print('start game for $numPlayers');
     Navigator.push(context,
         MaterialPageRoute(builder: (context) => GameLoopPage(numPlayers))
-    );
+    ).then((result){
+      print('cb from push');
+      Future.delayed(const Duration(milliseconds: 200), () async {
+        await initSTT();
+        speech.errorListener = errorListener;
+        speech.statusListener = statusListener;
+        startListening();
+      });
+    });
   }
 }
