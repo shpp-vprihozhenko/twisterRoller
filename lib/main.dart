@@ -62,7 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initTtsAndSttAndFirstSpeech() async {
     await initSTT();
     await initTts();
-    //firstSpeech();
+    await firstSpeech();
     startListening();
   }
 
@@ -134,13 +134,26 @@ class _MyHomePageState extends State<MyHomePage> {
         showMic = false;
       });
       String recognizedWords = result.recognizedWords.toString().toUpperCase();
-      if (recognizedWords.indexOf('СТАРТ') == -1) {
-        print('no start, repeat stt loop');
+      if (recognizedWords.indexOf('СТАРТ') > -1) {
+        goToStartGamePage();
+      } else if (isNumeric(recognizedWords)) {
+        print('isNumeric $recognizedWords');
+        setState(() {
+          numPlayers = int.parse(recognizedWords);
+        });
         startListening();
       } else {
-        goToStartGamePage();
+        print('no start, repeat stt loop');
+        startListening();
       }
     }
+  }
+
+  bool isNumeric(String s) {
+    if (s == null) {
+      return false;
+    }
+    return int.tryParse(s) != null;
   }
 
   Future _getLanguages() async {
@@ -216,7 +229,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title, textScaleFactor: 1.4, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: Container(
-        padding: EdgeInsets.all(12),
+        padding: EdgeInsets.all(6),
         child: Center(
           child: ListView(
             shrinkWrap: true,
@@ -227,17 +240,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 '\nПривет! \nЯ - интерактивный помощник для игры Твистер.',
                 textScaleFactor: 1.3, textAlign: TextAlign.center,
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 10),
               Text(
                   'Я понимаю такие госовые команды: \n   "ОК" - следующий игрок,\n   "А ну повтори!" - повторить задание.',
                   textScaleFactor: 1.3, textAlign: TextAlign.center
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 10),
               Text(
                   'Для начала игры укажи количество игроков и нажми или скажи "Старт"!',
                   textScaleFactor: 1.3, textAlign: TextAlign.center
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 10),
               Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -277,7 +290,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ],
                 ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 10),
               FlatButton(
                 color: Colors.blueAccent,
                 onPressed: (){
@@ -310,16 +323,30 @@ class _MyHomePageState extends State<MyHomePage> {
               )
                 //IconButton(icon: Icon(Icons.mic, color: Colors.blueAccent,), onPressed: (){})
                 :SizedBox(),
+              SizedBox(height: 80,),
             ],
           ),
+        ),
+      ),
+      //bottomNavigationBar: BottomNavigationBar()
+      bottomSheet: Container(
+        color: Colors.lightBlueAccent[100],
+        height: 80,
+        child: Center(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Text('Автор идеи и разработчик -\nПрихоженко Владимир', textAlign: TextAlign.center,),
+              Text('Замечания и пожелания шлите на\nvprihogenko@gmail.com', textAlign: TextAlign.center),
+          ],),
         ),
       ),
     );
   }
 
   Widget buildSmileIcon() {
-    return speakingMode? Image.asset('images/speakingSmile.gif', width: 100, height: 100,)
-        : Image.asset('images/notSpeakingSmile.jpg', width: 100, height: 100,);
+    return speakingMode? Image.asset('images/speakingSmile.gif', width: 80, height: 80,)
+        : Image.asset('images/notSpeakingSmile.jpg', width: 80, height: 80,);
   }
 
   showAlertPage(String msg) {

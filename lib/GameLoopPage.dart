@@ -165,7 +165,8 @@ class _GameLoopPageState extends State<GameLoopPage> {
         showMic = false;
       });
       List <String> recognizedWords = result.recognizedWords.toString().toUpperCase().split(' ');
-      if (recognizedWords.indexOf('OK') > -1 || recognizedWords.indexOf('О\'КЕЙ') > -1 || recognizedWords.indexOf('ОК') > -1) {
+      if (recognizedWords.indexOf('OK') > -1 || recognizedWords.indexOf('О\'КЕЙ') > -1
+          || recognizedWords.indexOf('ОК') > -1 || recognizedWords.indexOf('СЛЕДУЮЩИЙ') > -1) {
         print('start new random loop');
         startNextPlayerLoop();
       } else if (recognizedWords.indexOf('ПОВТОРИ') > -1) {
@@ -258,7 +259,7 @@ class _GameLoopPageState extends State<GameLoopPage> {
             Center(child: Text('Задание для игрока', textScaleFactor: 2,)),
             SizedBox(height: 10,),
             Center(child: Text('№ $playerNumber', textScaleFactor: 2.5,)),
-            SizedBox(height: 20,),
+            SizedBox(height: 10,),
             Center(
               child: Container(
                 height: picSize*1.1,
@@ -350,7 +351,7 @@ class _GameLoopPageState extends State<GameLoopPage> {
             SizedBox(height: 10,),
             showMic? FlatButton(
               color: Colors.lightBlueAccent,
-              child: Text('Следующий игрок', textScaleFactor: 1.5,),
+              child: Text('OK - следующий игрок', textScaleFactor: 1.5,),
               onPressed: startNextPlayerLoop,
             )
             : SizedBox(),
